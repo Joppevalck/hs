@@ -120,8 +120,8 @@ print("plaintexts", pt1.shape)
 #E.g. let's make up some numbers. If the leakage window starts at x = 123456
 #and the window ends at x = 246912 you set start and stop to those values
 #respectively
-start = 0
-stop = tr1.shape[1]
+start = 45140
+stop = start + 60000
 traces = tr1[:, start:stop]
 
 #TODO:
@@ -136,9 +136,12 @@ plt.plot(traces[1])
 #Plot only the first round (or two) of AES.
 #Also plot vertical lines around where you think we will
 #find the information leakage. To plot vertical lines
-#you can use the command
-#plt.axvline(x, color, xmin, xmax, linestyle)
-#
+#you can use the command axvline(...)
+plt.axvline(x=12000, color="r", ymin=0, ymax=250)
+plt.text(10.1,0,'blah',rotation=90)
+plt.axvline(x=29000, color="r", ymin=0, ymax=250)
+plt.show()
+
 #You may wish to delimit your traces around where
 #the leakage point is to speed up computations later
 
@@ -150,6 +153,7 @@ plt.plot(traces[1])
 #%matplotlib qt 
 #plt.plot([1,2,3])
 
+# hammingweight, XOR bitwise between prediction and actual trace
 #TODO:
 #for each possible value of the keybytes, formulate
 #a power hypothesis. Make sure you understand what
@@ -158,6 +162,7 @@ plt.plot(traces[1])
 #The Sbox for AES is provided in case you wish to 
 #use it for your power hypothesis
 
+# for i in range(256)
 
 
 #TODO:
