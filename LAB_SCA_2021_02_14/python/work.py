@@ -107,11 +107,11 @@ def mycorr(x,y):
 #TODO:
 #Select which files to open. Filenames defined at the top.
 #Functions for loading are named the same as in the Matlab code.
-traces = myload(trfile1)
-plaintexts = myin(ptfile1)
+tr1 = myload(trfile1)
+pt1 = myin(ptfile1)
 
 #Use this to check that you loaded the files correctly
-print("traces", traces.shape)
+print("traces", tr1.shape)
 print("plaintexts", pt1.shape)
 
 #TODO:
@@ -121,8 +121,8 @@ print("plaintexts", pt1.shape)
 #and the window ends at x = 246912 you set start and stop to those values
 #respectively
 start = 0
-stop = traces.shape[1]
-traces = traces[:, start:stop]
+stop = tr1.shape[1]
+traces = tr1[:, start:stop]
 
 #TODO:
 #plot one of the power traces.
@@ -130,7 +130,7 @@ traces = traces[:, start:stop]
 #in the traces. Also, try to determine if keybytes are
 #calculated in series (8-bit operations), 4 at a time
 #(32-bit operations), or all parallely.
-# plt.plot(traces[1])
+plt.plot(traces[1])
 
 #TODO:
 #Plot only the first round (or two) of AES.
