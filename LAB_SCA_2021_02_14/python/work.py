@@ -12,8 +12,6 @@ trfile1 = "traces-00112233445566778899aabbccddeeff.npy"
 # trfile2 = "traces-unknown_key.bin"
 trfile2 = "traces-unknown_key.npy"
 
-print("hello")
-
 
 Sbox = np.array([
             0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -123,6 +121,7 @@ print("plaintexts", pt1.shape)
 start = 45140
 stop = start + 60000
 traces = tr1[:, start:stop]
+print(traces.shape)
 
 #TODO:
 #plot one of the power traces.
@@ -130,7 +129,11 @@ traces = tr1[:, start:stop]
 #in the traces. Also, try to determine if keybytes are
 #calculated in series (8-bit operations), 4 at a time
 #(32-bit operations), or all parallely.
+plt.plot(traces[0])
 plt.plot(traces[1])
+plt.plot(traces[2])
+plt.plot(traces[3])
+plt.plot(traces[4])
 
 #TODO:
 #Plot only the first round (or two) of AES.
@@ -138,7 +141,6 @@ plt.plot(traces[1])
 #find the information leakage. To plot vertical lines
 #you can use the command axvline(...)
 plt.axvline(x=12000, color="r", ymin=0, ymax=250)
-plt.text(10.1,0,'blah',rotation=90)
 plt.axvline(x=29000, color="r", ymin=0, ymax=250)
 plt.show()
 
@@ -153,7 +155,6 @@ plt.show()
 #%matplotlib qt 
 #plt.plot([1,2,3])
 
-# hammingweight, XOR bitwise between prediction and actual trace
 #TODO:
 #for each possible value of the keybytes, formulate
 #a power hypothesis. Make sure you understand what
@@ -162,8 +163,25 @@ plt.show()
 #The Sbox for AES is provided in case you wish to 
 #use it for your power hypothesis
 
-# for i in range(256)
+pt1_first_row = pt1[0]
 
+# XOR
+xor = np.empty((16,256))        # empty array
+for i in range(16):                         # 8 bit pt 16 times (for 128 bit key)
+    for j in range(256):                    # 8 bit rk predictions, 2^8(256) possibilities
+        xor[i, j] = pt1_first_row[i]^j      # bitwise xor operation
+
+# SBOX
+sbox_vals = np.empty((16, 256)) # empty array
+for i in range(16):                         # pt entries
+    for j in range(256):                    # intermediate values (xor output)
+        sbox_vals[i,j] = Sbox[xor[i,j].astype("uint32")]     # mapping from intermediate value to sbox output
+
+# Hemming weight (count 1's)
+hemming = np.empty((16, 256))   # empty array
+for i in range(16):                         # pt entries
+    for j in range(256):                    # sbox output
+        hemming[i, j] = bin(sbox_vals[i,j].astype("uint32")).count("1")    # hemming weight "algorithm" on the output from the Sbox
 
 #TODO:
 #for each of the 16 subkeys, use your power hypothesis
@@ -173,24 +191,24 @@ plt.show()
 #The instructions say to make sure you know what CC is.
 #Obviously one of the Cs is correlation. Which of these
 #describes what CC is:
-#1) Cross Correlation
-#2) Correlation Coefficients
+#1) Cross Correlation 
+#2) Correlation Coefficients <----------
 #3) Cumulative Correlation
 #4) Central Correlation
 #
 #What shape would you expect the CC variable to have?
 #Try plotting its shape and see if your guess was correct.
 
-# for BYTE in range(16):
-   
-#     #YOUR CODE HERE#
-    
-#     CC = mycorr(powerhyp, traces)
+for BYTE in range(16):
+ 
+    #YOUR CODE HERE# hemming[BYTE][256guesses]
+    print(traces.shape)
+    CC = mycorr(hemming[BYTE], traces[0])
 
-#     #TODO:
-#     #Write code to find the correct keybyte.
-#     #You will want to print it. Depending on your code
-#     #you may have to print it inside the loop.
+    #TODO:
+    #Write code to find the correct keybyte.
+    #You will want to print it. Depending on your code
+    #you may have to print it inside the loop.
 
     
 #NOTE: The amount of code you need to write in this section
