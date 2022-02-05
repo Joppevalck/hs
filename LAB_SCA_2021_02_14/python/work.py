@@ -167,8 +167,8 @@ tr1_start = 45140
 tr1_stop = tr1_start + 60000
 tr1_traces = tr1[:, tr1_start:tr1_stop]
 
-tr2_start = 10000
-tr2_stop = tr2_start + 8000
+tr2_start = 0
+tr2_stop = tr2_start + 30000
 tr2_traces = tr2[:, tr2_start:tr2_stop]
 
 
@@ -188,9 +188,9 @@ plt.plot(tr2_traces[0])
 #you can use the command axvline(...)
 # plt.axvline(x=12000, color="r", ymin=0, ymax=250)
 # plt.axvline(x=29000, color="r", ymin=0, ymax=250)
-# plt.axvline(x=6200, color="r", ymin=0, ymax=250)
-# plt.axvline(x=14000, color="r", ymin=0, ymax=250)
-# plt.show()
+plt.axvline(x=6200, color="r", ymin=0, ymax=250)
+plt.axvline(x=14000, color="r", ymin=0, ymax=250)
+plt.show()
 
 #You may wish to delimit your traces around where
 #the leakage point is to speed up computations later
@@ -213,9 +213,9 @@ plt.plot(tr2_traces[0])
 
 
 # Known key
-known_xor = getxor(pt1)
-known_sbox = getsbox(known_xor)
-known_hemming = gethw(known_sbox)
+# known_xor = getxor(pt1)
+# known_sbox = getsbox(known_xor)
+# known_hemming = gethw(known_sbox)
 
 # Unknown key 
 uk_xor = getxor(pt2)
