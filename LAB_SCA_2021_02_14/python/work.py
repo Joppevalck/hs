@@ -101,16 +101,61 @@ def mycorr(x,y):
     C = np.divide(C, repmat(ysq, xc, 1))
     return C
 
+# XOR
+def getxor(pt):
+    rows = np.shape(pt)[0]
+    xor = np.empty((16, rows, 256))                # empty array
+    for i in range(16):                         # pt_col, one per round key
+        for j in range(rows):                    # pt_row, 200 per round key
+            for k in range(256):                # round key guess, 256 per [row, col]
+                xor[i, j, k] = (pt[j, i])^k     # bitwise xor operation
+    return xor
+
+# Sbox lookups
+def getsbox(xor):
+    rows = np.shape(xor)[1]
+    sbox_vals = np.empty((16, rows, 256))                                   # empty array
+    for i in range(16):                                                     # pt_col, one per round key
+        for j in range(rows):                                               # pt_row, 200 per round key
+            for k in range(256):                                            # intermediate values (xor output)
+                sbox_vals[i, j, k] = Sbox[xor[i, j, k].astype("uint32")]    # mapping from intermediate value to sbox output
+    return sbox_vals
+    
+# Hemming weight power model (count 1's)
+def gethw(sbox_vals):
+    rows = np.shape(sbox_vals)[1]
+    hemming = np.empty((16, rows, 256))                                                     # empty array
+    for i in range(16):                                                                     # pt_col, one per round key
+        for j in range(rows):                                                               # pt_row, 200 per round key
+            for k in range(256):                                                            # round key guess, 256 per [row, col]
+                hemming[i, j, k] = bin(sbox_vals[i, j, k].astype("uint32")).count("1")      # Number of ones for each sbox output
+    return hemming
+
+# Prints out secret key
+def printrk(hemming, traces):
+    for RK in range(16): 
+        CC = mycorr(hemming[RK], traces)            # calculate CC
+        max_corr = np.max(CC)                       # find max value of correlation
+        result = np.where(CC == max_corr)[0][0]     # find indices representing max CC value
+                                                    # result[0, 0] will give row of CC array, ie RK guess)
+        print("RK[",RK,"]:\t", format(int(result), '#04x'))
+        # plt.plot(CC)
+        # plt.show()
 
 #TODO:
 #Select which files to open. Filenames defined at the top.
 #Functions for loading are named the same as in the Matlab code.
-tr1 = myload(trfile1)
-pt1 = myin(ptfile1)
+tr1 = myload(trfile1)   # known key
+pt1 = myin(ptfile1)     # known key
+
+tr2 = myload(trfile2)   # unknown key
+pt2 = myin(ptfile2)     # unknown key
 
 #Use this to check that you loaded the files correctly
-print("traces", tr1.shape)
-print("plaintexts", pt1.shape)
+print("tr1", tr1.shape)
+print("tr2", tr2.shape)
+print("pt1", pt1.shape)
+print("pt2", pt2.shape)
 
 #TODO:
 #After doing the next part you can come back here and change the
@@ -118,10 +163,14 @@ print("plaintexts", pt1.shape)
 #E.g. let's make up some numbers. If the leakage window starts at x = 123456
 #and the window ends at x = 246912 you set start and stop to those values
 #respectively
-start = 45140
-stop = start + 60000
-traces = tr1[:, start:stop]
-print(traces.shape)
+tr1_start = 45140
+tr1_stop = tr1_start + 60000
+tr1_traces = tr1[:, tr1_start:tr1_stop]
+
+tr2_start = 10000
+tr2_stop = tr2_start + 8000
+tr2_traces = tr2[:, tr2_start:tr2_stop]
+
 
 #TODO:
 #plot one of the power traces.
@@ -129,11 +178,8 @@ print(traces.shape)
 #in the traces. Also, try to determine if keybytes are
 #calculated in series (8-bit operations), 4 at a time
 #(32-bit operations), or all parallely.
-# plt.plot(traces[0])
-# plt.plot(traces[1])
-# plt.plot(traces[2])
-# plt.plot(traces[3])
-# plt.plot(traces[4])
+# plt.plot(tr1_traces[0])
+plt.plot(tr2_traces[0])
 
 #TODO:
 #Plot only the first round (or two) of AES.
@@ -142,6 +188,8 @@ print(traces.shape)
 #you can use the command axvline(...)
 # plt.axvline(x=12000, color="r", ymin=0, ymax=250)
 # plt.axvline(x=29000, color="r", ymin=0, ymax=250)
+# plt.axvline(x=6200, color="r", ymin=0, ymax=250)
+# plt.axvline(x=14000, color="r", ymin=0, ymax=250)
 # plt.show()
 
 #You may wish to delimit your traces around where
@@ -163,27 +211,16 @@ print(traces.shape)
 #The Sbox for AES is provided in case you wish to 
 #use it for your power hypothesis
 
-# XOR
-xor = np.empty((16,200,256))                # empty array
-print(xor.shape)
-for i in range(16):                         # pt_col, one per round key
-    for j in range(199):                    # pt_row, 200 per round key
-        for k in range(256):                # round key guess, 256 per [row, col]
-            xor[i, j, k] = (pt1[j, i])^k      # bitwise xor operation
 
-# SBOX
-sbox_vals = np.empty((16, 200, 256))                                    # empty array
-for i in range(16):                                                     # pt_col, one per round key
-    for j in range(200):                                                # pt_row, 200 per round key
-        for k in range(256):                                            # intermediate values (xor output)
-            sbox_vals[i, j, k] = Sbox[xor[i, j, k].astype("uint32")]    # mapping from intermediate value to sbox output
+# Known key
+known_xor = getxor(pt1)
+known_sbox = getsbox(known_xor)
+known_hemming = gethw(known_sbox)
 
-# Hemming weight (count 1's)
-hemming = np.empty((16,200,256))                                                        # empty array
-for i in range(16):                                                                     # pt_col, one per round key
-    for j in range(200):                                                                # pt_row, 200 per round key
-        for k in range(256):                                                            # round key guess, 256 per [row, col]
-            hemming[i, j, k] = bin(sbox_vals[i, j, k].astype("uint32")).count("1")      # Number of ones for each sbox output
+# Unknown key 
+uk_xor = getxor(pt2)
+uk_sbox = getsbox(uk_xor)
+uk_hemming = gethw(uk_sbox)
 
 #TODO:
 #for each of the 16 subkeys, use your power hypothesis
@@ -201,17 +238,12 @@ for i in range(16):                                                             
 #What shape would you expect the CC variable to have?
 #Try plotting its shape and see if your guess was correct.
 
-for RK in range(16): 
-    
-    # print(traces.shape)
-    CC = mycorr(hemming[RK], traces)    # calculate CC
-    max_corr = np.max(CC)               # find max value of correlation
-    result = np.where(CC == max_corr)   # find indices of 2D CC array
-    # result[0, 0] will give row of CC array, ie RK guess)
-    print("RK[",RK,"]:\t", format(int(result[0][0]), '#04x'))
-    
-    # plt.plot(CC)
-    # plt.show()
+
+# print("known key")
+# printrk(known_hemming, tr1_traces)
+
+print("\nunknown key")
+printrk(uk_hemming, tr2_traces)
 
     #TODO:
     #Write code to find the correct keybyte.
